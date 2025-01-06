@@ -1,0 +1,5 @@
+- name: k3s-cluster-uninstall
+  hosts: k3s
+  roles:
+    - role: ansible-k3s-cluster
+      mode: uninstall

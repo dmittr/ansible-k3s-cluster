@@ -30,7 +30,7 @@
   when: inventory_hostname != k3s_init and not k3s_token_file.stat.exists
 
 - name: Install k3s masters
-  ansible.builtin.shell: curl -sfL https://get.k3s.io | sh -s server --server https://{{ k3s_domain }}:6443 --token "{{ hostvars[k3s_init]['k3s_token'] }}" --flannel-iface={{k3s_interface}} --node-ip={{item}} --node-external-ip={{item}} --disable traefik
+  ansible.builtin.shell: curl -sfL https://get.k3s.io | sh -s server --server https://{{ k3s_domain }}:6443 --token "{{ hostvars[k3s_init]['k3s_token'] }}" --flannel-iface={{k3s_interface}} --node-ip={{item}} --node-external-ip={{item}} {{k3s_install_cmd_extra_masters}}
   args:
     executable: /bin/bash
   with_items:
@@ -39,7 +39,7 @@
 
 
 - name: Install k3s agents
-  ansible.builtin.shell: curl -sfL https://get.k3s.io | sh -s agent --server https://{{ k3s_domain }}:6443 --token "{{ hostvars[k3s_init]['k3s_token'] }}" --flannel-iface={{k3s_interface}} --node-ip={{item}} --node-external-ip={{item}}
+  ansible.builtin.shell: curl -sfL https://get.k3s.io | sh -s agent --server https://{{ k3s_domain }}:6443 --token "{{ hostvars[k3s_init]['k3s_token'] }}" --flannel-iface={{k3s_interface}} --node-ip={{item}} --node-external-ip={{item}} {{k3s_install_cmd_extra_agents}}
   args:
     executable: /bin/bash
   with_items:

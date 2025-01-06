@@ -1,0 +1,20 @@
+- name: k3s-cluster-install
+  hosts: k3s
+  vars:
+    k3s_init: core.domain.tld
+    k3s_masters:
+      - node1.domain.tld
+      - node2.lan.domain.tld
+    k3s_agents:
+      - node3.lan.domain.tld
+      - node4.lan.domain.tld
+      - node5.lan.domain.tld
+      - node6.lan.domain.tld
+    k3s_interface: wg-kube
+    k3s_domain: k3s.domain.tld
+    k3s_install_cmd_extra_init: --write-kubeconfig-mode=644 --disable traefik
+    k3s_install_cmd_extra_masters: --disable traefik
+    k3s_install_cmd_extra_agents:
+  roles:
+    - role: ansible-k3s-cluster
+      mode: install
