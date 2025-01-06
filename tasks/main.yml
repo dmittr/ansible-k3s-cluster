@@ -1,0 +1,8 @@
+---
+- name: Setup k3s cluster
+  include_tasks: install.yml
+  when: mode == "install"
+
+- name: Remove k3s cluster
+  include_tasks: uninstall.yml
+  when: mode == "uninstall"

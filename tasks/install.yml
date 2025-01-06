@@ -1,0 +1,49 @@
+---
+- name: Check token file
+  stat:
+    path: /var/lib/rancher/k3s/server/token
+  register: k3s_token_file
+
+- name: Install k3s init (leader)
+  ansible.builtin.shell: curl -sfL https://get.k3s.io | sh -s server --cluster-init --flannel-iface={{k3s_interface}} --node-ip={{item}} --node-external-ip={{item}} --tls-san={{k3s_domain}} {{k3s_install_cmd_extra_init}}
+  args:
+    executable: /bin/bash
+  with_items:
+    - "{{ansible_facts[k3s_interface|replace('-','_')]['ipv4']['address']}}"
+  when: inventory_hostname == k3s_init and not k3s_token_file.stat.exists
+
+- name: Gather init (leader) IP
+  set_fact:
+    k3s_init_ip: "{{ansible_facts[k3s_interface|replace('-','_')]['ipv4']['address']}}"
+  when: inventory_hostname == k3s_init
+
+- name: Gather token
+  set_fact:
+    k3s_token: "{{ lookup('file', '/var/lib/rancher/k3s/server/token') }}"
+  when: inventory_hostname == k3s_init
+
+- name: Prepare hosts file
+  lineinfile:
+    dest: /etc/hosts 
+    line: "{{ hostvars[k3s_init]['k3s_init_ip'] }} {{ k3s_domain }}"
+    state: present
+  when: inventory_hostname != k3s_init and not k3s_token_file.stat.exists
+
+- name: Install k3s masters
+  ansible.builtin.shell: curl -sfL https://get.k3s.io | sh -s server --server https://{{ k3s_domain }}:6443 --token "{{ hostvars[k3s_init]['k3s_token'] }}" --flannel-iface={{k3s_interface}} --node-ip={{item}} --node-external-ip={{item}} --disable traefik
+  args:
+    executable: /bin/bash
+  with_items:
+    - "{{ansible_facts[k3s_interface|replace('-','_')]['ipv4']['address']}}"
+  when: inventory_hostname in k3s_masters and not k3s_token_file.stat.exists
+
+
+- name: Install k3s agents
+  ansible.builtin.shell: curl -sfL https://get.k3s.io | sh -s agent --server https://{{ k3s_domain }}:6443 --token "{{ hostvars[k3s_init]['k3s_token'] }}" --flannel-iface={{k3s_interface}} --node-ip={{item}} --node-external-ip={{item}}
+  args:
+    executable: /bin/bash
+  with_items:
+    - "{{ansible_facts[k3s_interface|replace('-','_')]['ipv4']['address']}}"
+  when: inventory_hostname in k3s_agents and not k3s_token_file.stat.exists
+
+
